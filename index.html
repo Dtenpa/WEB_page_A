@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Minimal Research — Evaluation Page</title>
+  <link rel="stylesheet" href="css/default.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+JP:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    .mm-scope{ --line:#E5E7EB; --text:#111;
+      font-family:"Noto Sans JP","Inter",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Hiragino Kaku Gothic ProN","Meiryo",sans-serif;
+      font-size:clamp(14px,1.6vw,16px); line-height:1.6; }
+    .mm-container{ width:min(100% - 32px,1080px); margin:0 auto; }
+    .mm-bg-slideshow{ position:fixed; inset:0; z-index:-1; overflow:hidden; }
+    .mm-bg-slideshow img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity 1s ease; }
+    .mm-bg-slideshow img.current{ opacity:1; }
+    .mm-bg-overlay{ position:absolute; inset:0; background:rgba(0,0,0,.32); }
+    .mm-header{ position:sticky; top:0; z-index:10; background:rgba(255,255,255,.86); backdrop-filter:blur(8px); border-bottom:1px solid var(--line); }
+    .mm-header__inner{ min-height:64px; display:flex; align-items:center; justify-content:space-between; }
+    .mm-brand{ display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.04em; }
+    .mm-brand__mark{ width:24px; height:24px; border-radius:8px; background:#111; }
+    .mm-nav{ display:flex; gap:16px; } @media(max-width:600px){ .mm-nav{ display:none; } }
+    .mm-nav__link{ color:#444; font-weight:600; position:relative; padding:6px 0; text-decoration:none; }
+    .mm-nav__link:focus-visible{ outline:3px solid #111; outline-offset:2px; border-radius:6px; }
+    .mm-hero{ padding:96px 0 96px; text-align:center; color:#fff; }
+    .mm-h1{ font-size:clamp(32px,6vw,56px); line-height:1.2; margin:0 0 8px; }
+    .mm-sub{ color:#f0f0f0; margin:0 0 16px; }
+    .mm-btn{ display:inline-block; padding:12px 16px; border-radius:12px; border:1px solid #111; background:#111; color:#fff; font-weight:600; box-shadow:0 8px 24px rgba(17,17,17,.06); transition:transform .14s; text-decoration:none;}
+    .mm-btn:hover{ transform:translateY(-1px); }
+    .mm-btn--outline{ background:#fff; color:#111; }
+    .mm-section{ padding:64px 0; }
+    .mm-grid{ display:grid; gap:16px; grid-template-columns:repeat(3,1fr); }
+    @media(max-width:960px){ .mm-grid{ grid-template-columns:repeat(2,1fr);} }
+    @media(max-width:600px){ .mm-grid{ grid-template-columns:1fr;} }
+    .mm-card{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:24px; box-shadow:0 8px 24px rgba(17,17,17,.06); transition:transform .14s; }
+    .mm-card:hover{ transform:translateY(-1px); }
+    .mm-omi-result{ display:inline-flex; align-items:center; justify-content:center; width:200px; height:200px; border:3px solid #333; border-radius:12px; background:#fff; font-size:2rem; color:#333; margin:16px auto; transition:opacity .3s, transform .3s; }
+    .mm-hidden{ opacity:0; transform:scale(.9); }
+    .mm-omi-btn{ display:inline-block; padding:10px 20px; border:2px solid #333; border-radius:8px; background:#fff; font-weight:700; }
+    .mm-canvas{ display:block; margin:16px auto; background:#fff; border:1px solid var(--line); border-radius:14px; box-shadow:0 8px 24px rgba(17,17,17,.06); }
+    .mm-reveal{ opacity:0; transform:translateY(12px); transition:opacity .6s ease, transform .6s ease; }
+    .visible{ opacity:1; transform:none; }
+    @media(prefers-reduced-motion:reduce){ .mm-bg-slideshow img{ transition:none;} .mm-reveal{ transition:none; opacity:1; transform:none;} }
+    /* --- Cursor fix (最優先で可視化) --- */
+html, body { cursor: auto !important; }
+
+/* クリックできる要素は明示的にポインター */
+a[href], button, .mm-btn, .mm-btn--outline, [role="button"], canvas#mmCanvas {
+  cursor: pointer !important;
+}
+
+/* 背景スライドショーは背面に固定＆イベント無効化（念のため） */
+.mm-bg-slideshow, .mm-bg-slideshow * { pointer-events: none !important; }
+
+/* 過去版のカスタムカーソルUIが残っていた場合は強制オフ */
+#cursor, .cursor, #progress-bar { display: none !important; }
+  </style>
+</head>
+<body class="mm-scope">
+  <div class="mm-bg-slideshow" aria-hidden="true">
+    <img src="img/bg_clean_01.png" alt="抽象的なモノトーン背景 1" class="current">
+    <img src="img/bg_clean_02.png" alt="抽象的なモノトーン背景 2">
+    <img src="img/bg_clean_03.png" alt="抽象的なモノトーン背景 3">
+    <img src="img/bg_clean_04.png" alt="抽象的なモノトーン背景 4">
+    <div class="mm-bg-overlay"></div>
+  </div>
+
+  <header class="mm-header" role="banner">
+    <div class="mm-container mm-header__inner">
+      <div class="mm-brand" aria-label="ロゴ">
+        <div class="mm-brand__mark" aria-hidden="true"></div><span>Web Page A</span>
+      </div>
+    </div>
+  </header>
+
+  <section class="mm-hero">
+    <div class="mm-container">
+      <h1 class="mm-h1 mm-reveal">Web Page A</h1>
+      <p class="mm-sub mm-reveal">
+        このウェブページは、AIが作ったデザインと人が作ったデザインを比べるための実験用ページです。<br>
+        二つのウェブページを使い比べて評価してください。
+      </p>
+      <div class="mm-reveal" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <a class="mm-btn" href="#omikuji" aria-label="おみくじへ移動">Omikuji</a>
+        <a class="mm-btn mm-btn--outline" href="#canvas" aria-label="Canvasへ移動">animation game</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="mm-section">
+  <div class="mm-container">
+    <header class="mm-reveal">
+      <p class="mm-sub" style="letter-spacing:.12em;text-transform:uppercase">Features</p>
+      <h2 class="mm-reveal" style="margin:0">見やすさ・軽さ・使いやすさ</h2>
+    </header>
+    <div class="mm-grid">
+      <article class="mm-card mm-reveal">
+        <h3>見やすさ</h3>
+        <p>白と黒を中心にした落ち着いた色合いと、ゆとりのある余白で、どんな人にも読みやすくしています。</p>
+      </article>
+      <article class="mm-card mm-reveal">
+        <h3>軽さと速さ</h3>
+        <p>余計な仕組みを使わず、シンプルな作りにすることで、すぐに表示される軽いページになっています。</p>
+      </article>
+      <article class="mm-card mm-reveal">
+        <h3>使いやすさ</h3>
+        <p>ボタンや文字のコントラストをはっきりさせ、動きが苦手な人にも優しいアニメーションにしています。</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+
+  <section id="omikuji" class="mm-section">
+    <div class="mm-container" role="region" aria-label="おみくじ">
+      <h2 class="mm-reveal">Omikuji</h2>
+      <p class="mm-reveal" style="color:#fff;">ボタンを押して、ランダムなおみくじを引いてみましょう。</p>
+      <div id="omiResult" class="mm-omi-result mm-hidden" aria-live="polite" aria-atomic="true">?</div><br/>
+      <button id="omiBtn" class="mm-omi-btn">おみくじを引く</button>
+    </div>
+  </section>
+
+  <section id="canvas" class="mm-section">
+    <div class="mm-container" role="region" aria-label="Canvasアニメーション">
+      <h2 class="mm-reveal">Animation Game</h2>
+      <p class="mm-reveal" style="color:#fff;">キャンバスをクリックすると球が増えます。</p>
+      <canvas id="mmCanvas" class="mm-canvas" width="800" height="420" aria-hidden="true"></canvas>
+    </div>
+  </section>
+
+  <section class="mm-section">
+    <div class="mm-container" role="region" aria-label="行動喚起">
+      <div class="mm-card mm-reveal" style="text-align:center">
+        <p class="mm-sub" style="letter-spacing:.16em;text-transform:uppercase">Get in Touch</p>
+        <h3 style="margin-top:0">比較評価にご協力ください</h3>
+        <p class="mm-sub">AI生成と人手制作の2バージョンを体験いただき、見やすさや好みを5段階でご評価ください。</p>
+        <a class="mm-btn" href="#" aria-label="評価フォームを開く">評価フォームへ</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="mm-section" role="contentinfo">
+    <div class="mm-container" style="text-align:center; color:#444;">
+      <small>&copy; <span id="year"></span> Minimal Research</small>
+    </div>
+  </footer>
+
+  <script>
+    (function(){
+      const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const els = document.querySelectorAll('.mm-reveal');
+      if(reduced){ els.forEach(el => el.classList.add('visible')); return; }
+      if('IntersectionObserver' in window){
+        const io = new IntersectionObserver(entries => {
+          entries.forEach(e => { if(e.isIntersecting){ e.target.classList.add('visible'); io.unobserve(e.target); } });
+        }, { threshold: .08 });
+        els.forEach(el => io.observe(el));
+      } else { els.forEach(el => el.classList.add('visible')); }
+    })();
+
+    (function(){
+      const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if(reduced) return;
+      const imgs = Array.from(document.querySelectorAll('.mm-bg-slideshow img'));
+      let i = 0;
+      setInterval(() => {
+        imgs[i].classList.remove('current');
+        i = (i + 1) % imgs.length;
+        imgs[i].classList.add('current');
+      }, 5000);
+    })();
+
+    (function(){
+      const results = ['大吉','中吉','小吉','吉','凶'];
+      const btn = document.getElementById('omiBtn');
+      const box = document.getElementById('omiResult');
+      btn.addEventListener('click', () => {
+        btn.disabled = true;
+        box.classList.add('mm-hidden');
+        setTimeout(() => {
+          const r = results[Math.floor(Math.random()*results.length)];
+          box.textContent = r;
+          box.classList.remove('mm-hidden');
+        }, 500);
+        setTimeout(() => { btn.disabled = false; }, 1000);
+      });
+    })();
+
+    (function(){
+      const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const cvs = document.getElementById('mmCanvas');
+      const ctx = cvs.getContext('2d');
+      const balls = [];
+      function addBall(x = cvs.width/2, y = cvs.height/2){
+        const sp = 2 + Math.random()*1.5;
+        const ang = Math.random()*Math.PI*2;
+        balls.push({ x, y, r: 10, dx: sp*Math.cos(ang), dy: sp*Math.sin(ang) });
+      }
+      function draw(){
+        ctx.clearRect(0,0,cvs.width,cvs.height);
+        balls.forEach(b=>{
+          ctx.beginPath();
+          ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+          ctx.fillStyle = '#111';
+          ctx.fill();
+        });
+      }
+      function step(){
+        draw();
+        balls.forEach(b=>{
+          b.x += b.dx; b.y += b.dy;
+          if(b.x < b.r || b.x > cvs.width - b.r) b.dx *= -1;
+          if(b.y < b.r || b.y > cvs.height - b.r) b.dy *= -1;
+        });
+        requestAnimationFrame(step);
+      }
+      addBall();
+      if(!reduced){ requestAnimationFrame(step); } else { draw(); }
+      cvs.addEventListener('click', (e)=>{
+        const rect = cvs.getBoundingClientRect();
+        addBall(e.clientX - rect.left, e.clientY - rect.top);
+        if(reduced) draw();
+      });
+    })();
+
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
